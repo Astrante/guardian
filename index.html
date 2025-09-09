@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Password Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .login-form, .main-app {
+            display: none;
+        }
+
+        .login-form.active, .main-app.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input[type="password"], input[type="text"], input[type="url"], textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn.secondary {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+        }
+
+        .btn.danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        .btn.small {
+            width: auto;
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .password-list {
+            margin-top: 30px;
+        }
+
+        .password-item {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .password-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .password-item h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        .password-item p {
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+
+        .password-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .add-form {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .add-form.active {
+            display: block;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .error-message {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .success-message {
+            background: #efe;
+            border: 1px solid #cfc;
+            color: #3c3;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .stats {
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .toolbar {
+                flex-direction: column;
+            }
+            
+            .password-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Secure Password Manager</h1>
+            <p>Ваши пароли в безопасности</p>
+        </div>
+        
+        <div class="content">
+            <!-- Форма входа -->
+            <div class="login-form active">
+                <div class="error-message" id="loginError"></div>
+                <div class="form-group">
+                    <label for="masterPassword">Мастер-пароль:</label>
+                    <input type="password" id="masterPassword" placeholder="Введите ваш мастер-пароль">
+                </div>
+                <button class="btn" onclick="login()">Войти</button>
+            </div>
+
+            <!-- Основное приложение -->
+            <div class="main-app">
+                <div class="stats">
+                    <h3>📊 Статистика</h3>
+                    <p>Всего паролей: <span id="totalPasswords">0</span></p>
+                </div>
+
+                <div class="toolbar">
+                    <input type="text" id="searchBox" placeholder="🔍 Поиск паролей..." class="search-box" onkeyup="searchPasswords()">
+                    <button class="btn small" onclick="toggleAddForm()">+ Добавить пароль</button>
+                    <button class="btn small secondary" onclick="exportData()">📥 Экспорт</button>
+                    <button class="btn small secondary" onclick="importData()">📤 Импорт</button>
+                    <button class="btn small danger" onclick="logout()">Выйти</button>
+                </div>
+
+                <div class="error-message" id="appError"></div>
+                <div class="success-message" id="appSuccess"></div>
+
+                <!-- Форма добавления пароля -->
+                <div class="add-form" id="addForm">
+                    <h3>➕ Добавить новый пароль</h3>
+                    <div class="form-group">
+                        <label for="siteName">Название сайта:</label>
+                        <input type="text" id="siteName" placeholder="Например: Gmail">
+                    </div>
+                    <div class="form-group">
+                        <label for="siteUrl">URL сайта:</label>
+                        <input type="url" id="siteUrl" placeholder="https://example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="username">Логин/Email:</label>
+                        <input type="text" id="username" placeholder="your@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Пароль:</label>
+                        <input type="password" id="password" placeholder="Ваш пароль">
+                        <button type="button" class="btn small" onclick="generatePassword()" style="margin-top: 10px;">🎲 Сгенерировать пароль</button>
+                    </div>
+                    <div class="form-group">
+                        <label for="notes">Заметки:</label>
+                        <textarea id="notes" rows="3" placeholder="Дополнительная информация (необязательно)"></textarea>
+                    </div>
+                    <button class="btn" onclick="addPassword()">Сохранить пароль</button>
+                    <button class="btn secondary" onclick="toggleAddForm()">Отмена</button>
+                </div>
+
+                <!-- Список паролей -->
+                <div class="password-list" id="passwordList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script>
+        // Глобальные переменные
+        let masterKey = '';
+        let passwords = [];
+        let isEditing = false;
+        let editingId = null;
+
+        // URL для хранения данных (замените на ваш GitHub репозиторий)
+        const GITHUB_API_URL = 'https://api.github.com/repos/YOUR_USERNAME/YOUR_REPO/contents/data.json';
+        const GITHUB_TOKEN = 'YOUR_GITHUB_TOKEN'; // Personal Access Token
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            // Автофокус на поле мастер-пароля
+            document.getElementById('masterPassword').focus();
+            
+            // Enter для входа
+            document.getElementById('masterPassword').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    login();
+                }
+            });
+        });
+
+        // Вход в систему
+        async function login() {
+            const masterPassword = document.getElementById('masterPassword').value;
+            
+            if (!masterPassword) {
+                showError('loginError', 'Введите мастер-пароль');
+                return;
+            }
+
+            // Создание ключа из мастер-пароля
+            masterKey = CryptoJS.PBKDF2(masterPassword, 'salt', {
+                keySize: 256/32,
+                iterations: 100000
+            }).toString();
+
+            try {
+                // Загрузка зашифрованных данных
+                await loadPasswords();
+                
+                // Переключение на основное приложение
+                document.querySelector('.login-form').classList.remove('active');
+                document.querySelector('.main-app').classList.add('active');
+                
+                renderPasswords();
+                updateStats();
+                
+            } catch (error) {
+                showError('loginError', 'Неверный мастер-пароль или ошибка загрузки данных');
+                console.error('Login error:', error);
+            }
+        }
+
+        // Выход из системы
+        function logout() {
+            masterKey = '';
+            passwords = [];
+            document.getElementById('masterPassword').value = '';
+            document.querySelector('.main-app').classList.remove('active');
+            document.querySelector('.login-form').classList.add('active');
+            hideMessages();
+        }
+
+        // Загрузка паролей из GitHub
+        async function loadPasswords() {
+            try {
+                // Попытка загрузки из GitHub (требует настройки)
+                // Для демонстрации используем localStorage
+                const encryptedData = localStorage.getItem('passwordManagerData');
+                
+                if (encryptedData) {
+                    const decrypted = CryptoJS.AES.decrypt(encryptedData, masterKey).toString(CryptoJS.enc.Utf8);
+                    passwords = JSON.parse(decrypted || '[]');
+                } else {
+                    passwords = [];
+                }
+            } catch (error) {
+                console.error('Error loading passwords:', error);
+                passwords = [];
+            }
+        }
+
+        // Сохранение паролей
+        async function savePasswords() {
+            try {
+                const dataToEncrypt = JSON.stringify(passwords);
+                const encrypted = CryptoJS.AES.encrypt(dataToEncrypt, masterKey).toString();
+                
+                // Сохранение в localStorage (для демонстрации)
+                localStorage.setItem('passwordManagerData', encrypted);
+                
+                // Здесь можно добавить сохранение в GitHub через API
+                
+                showSuccess('Данные успешно сохранены');
+            } catch (error) {
+                showError('appError', 'Ошибка при сохранении данных');
+                console.error('Save error:', error);
+            }
+        }
+
+        // Добавление нового пароля
+        async function addPassword() {
+            const siteName = document.getElementById('siteName').value;
+            const siteUrl = document.getElementById('siteUrl').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const notes = document.getElementById('notes').value;
+
+            if (!siteName || !username || !password) {
+                showError('appError', 'Заполните обязательные поля');
+                return;
+            }
+
+            const passwordEntry = {
+                id: isEditing ? editingId : Date.now().toString(),
+                siteName,
+                siteUrl,
+                username,
+                password,
+                notes,
+                createdAt: isEditing ? passwords.find(p => p.id === editingId).createdAt : new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+
+            if (isEditing) {
+                const index = passwords.findIndex(p => p.id === editingId);
+                passwords[index] = passwordEntry;
+                isEditing = false;
+                editingId = null;
+            } else {
+                passwords.push(passwordEntry);
+            }
+
+            await savePasswords();
+            clearAddForm();
+            toggleAddForm();
+            renderPasswords();
+            updateStats();
+            showSuccess('Пароль успешно сохранен');
+        }
+
+        // Генерация пароля
+        function generatePassword() {
+            const length = 16;
+            const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+            let password = '';
+            
+            for (let i = 0; i < length; i++) {
+                password += charset.charAt(Math.floor(Math.random() * charset.length));
+            }
+            
+            document.getElementById('password').value = password;
+        }
+
+        // Отображение паролей
+        function renderPasswords() {
+            const passwordList = document.getElementById('passwordList');
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            
+            const filteredPasswords = passwords.filter(p => 
+                p.siteName.toLowerCase().includes(searchTerm) ||
+                p.username.toLowerCase().includes(searchTerm) ||
+                (p.siteUrl && p.siteUrl.toLowerCase().includes(searchTerm))
+            );
+
+            if (filteredPasswords.length === 0) {
+                passwordList.innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 40px;">Паролей не найдено</p>';
+                return;
+            }
+
+            passwordList.innerHTML = filteredPasswords.map(p => `
+                <div class="password-item">
+                    <h3>🌐 ${p.siteName}</h3>
+                    ${p.siteUrl ? `<p><strong>URL:</strong> <a href="${p.siteUrl}" target="_blank">${p.siteUrl}</a></p>` : ''}
+                    <p><strong>Логин:</strong> ${p.username}</p>
+                    <p><strong>Пароль:</strong> <span style="font-family: monospace;">••••••••</span></p>
+                    ${p.notes ? `<p><strong>Заметки:</strong> ${p.notes}</p>` : ''}
+                    <p style="font-size: 0.9em; color: #95a5a6;"><strong>Обновлен:</strong> ${new Date(p.updatedAt).toLocaleDateString('ru-RU')}</p>
+                    <div class="password-actions">
+                        <button class="btn small" onclick="copyPassword('${p.id}')">📋 Копировать пароль</button>
+                        <button class="btn small" onclick="showPassword('${p.id}')" id="show-${p.id}">👁 Показать</button>
+                        <button class="btn small secondary" onclick="editPassword('${p.id}')">✏ Редактировать</button>
+                        <button class="btn small danger" onclick="deletePassword('${p.id}')">🗑 Удалить</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Копирование пароля
+        async function copyPassword(id) {
+            const password = passwords.find(p => p.id === id);
+            try {
+                await navigator.clipboard.writeText(password.password);
+                showSuccess('Пароль скопирован в буфер обмена');
+            } catch (err) {
+                showError('appError', 'Не удалось скопировать пароль');
+            }
+        }
+
+        // Показать/скрыть пароль
+        function showPassword(id) {
+            const password = passwords.find(p => p.id === id);
+            const button = document.getElementById(`show-${id}`);
+            const passwordSpan = button.parentElement.parentElement.querySelector('span[style*="monospace"]');
+            
+            if (passwordSpan.textContent === '••••••••') {
+                passwordSpan.textContent = password.password;
+                button.textContent = '🙈 Скрыть';
+            } else {
+                passwordSpan.textContent = '••••••••';
+                button.textContent = '👁 Показать';
+            }
+        }
+
+        // Редактирование пароля
+        function editPassword(id) {
+            const password = passwords.find(p => p.id === id);
+            
+            document.getElementById('siteName').value = password.siteName;
+            document.getElementById('siteUrl').value = password.siteUrl || '';
+            document.getElementById('username').value = password.username;
+            document.getElementById('password').value = password.password;
+            document.getElementById('notes').value = password.notes || '';
+            
+            isEditing = true;
+            editingId = id;
+            
+            document.getElementById('addForm').classList.add('active');
+            document.querySelector('#addForm h3').textContent = '✏ Редактировать пароль';
+        }
+
+        // Удаление пароля
+        async function deletePassword(id) {
+            if (confirm('Вы уверены, что хотите удалить этот пароль?')) {
+                passwords = passwords.filter(p => p.id !== id);
+                await savePasswords();
+                renderPasswords();
+                updateStats();
+                showSuccess('Пароль удален');
+            }
+        }
+
+        // Поиск паролей
+        function searchPasswords() {
+            renderPasswords();
+        }
+
+        // Переключение формы добавления
+        function toggleAddForm() {
+            const form = document.getElementById('addForm');
+            const isVisible = form.classList.contains('active');
+            
+            if (isVisible) {
+                form.classList.remove('active');
+                clearAddForm();
+            } else {
+                form.classList.add('active');
+                document.getElementById('siteName').focus();
+            }
+        }
+
+        // Очистка формы добавления
+        function clearAddForm() {
+            document.getElementById('siteName').value = '';
+            document.getElementById('siteUrl').value = '';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('notes').value = '';
+            isEditing = false;
+            editingId = null;
+            document.querySelector('#addForm h3').textContent = '➕ Добавить новый пароль';
+        }
+
+        // Обновление статистики
+        function updateStats() {
+            document.getElementById('totalPasswords').textContent = passwords.length;
+        }
+
+        // Экспорт данных
+        function exportData() {
+            const dataStr = JSON.stringify(passwords, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `passwords-backup-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            showSuccess('Данные экспортированы');
+        }
+
+        // Импорт данных
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = async function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    try {
+                        const text = await file.text();
+                        const importedPasswords = JSON.parse(text);
+                        
+                        if (confirm(`Импортировать ${importedPasswords.length} паролей? Это объединит их с существующими.`)) {
+                            // Объединение с существующими паролями
+                            importedPasswords.forEach(p => {
+                                p.id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+                                passwords.push(p);
+                            });
+                            
+                            await savePasswords();
+                            renderPasswords();
+                            updateStats();
+                            showSuccess(`Импортировано ${importedPasswords.length} паролей`);
+                        }
+                    } catch (error) {
+                        showError('appError', 'Ошибка при импорте файла');
+                    }
+                }
+            };
+            input.click();
+        }
+
+        // Показать ошибку
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+            setTimeout(() => element.style.display = 'none', 5000);
+        }
+
+        // Показать успех
+        function showSuccess(message) {
+            const element = document.getElementById('appSuccess');
+            element.textContent = message;
+            element.style.display = 'block';
+            setTimeout(() => element.style.display = 'none', 3000);
+        }
+
+        // Скрыть сообщения
+        function hideMessages() {
+            document.querySelectorAll('.error-message, .success-message').forEach(el => {
+                el.style.display = 'none';
+            });
+        }
+    </script>
+</body>
+</html>
